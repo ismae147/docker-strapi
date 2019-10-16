@@ -1,0 +1,56 @@
+version: "3.7"
+
+services:
+  api:
+    container_name: odontoperu-api
+    build: .
+    restart: always
+    environment:
+      - APP_NAME=odontoperuapi
+      - DATABASE_CLIENT=mongo
+      - DATABASE_HOST=db
+      - DATABASE_PORT=27017
+      - DATABASE_NAME=odontoperuapi
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=root
+      - DATABASE_SSL=false
+      - DATABASE_AUTHENTICATION_DATABASE=admin
+      - HOST=localhost
+    volumes:
+      - ./odontoperuapi:/usr/src/api/odontoperuapi
+    depends_on:
+      - db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.odontoperu_api_http.rule=Host(`${DOMAIN_API}`)"
+      - "traefik.http.routers.odontoperu_api_http.entrypoints=web"
+      - "traefik.docker.network=traefik"
+    networks:
+      - traefik
+  db:
+    image: mongo
+    container_name: my-mongodb
+    ports:
+      - 27017:27017
+    environment:
+      - MONGO_INITDB_DATABASE=mongo
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+    volumes:
+      # seeding scripts
+      - ./mongo-entrypoint:/docker-entrypoint-initdb.d
+      # named volumes
+      - mongodb:/data/db
+      - mongoconfig:/data/configdb
+    networks:
+      - traefik
+
+volumes:
+  # default dir on Ubuntu: /var/lib/docker/volumes
+  mongodb:
+  mongoconfig:
+
+networks:
+  traefik:
+    external:
+      name: docker-fiestas_default
